@@ -1,0 +1,37 @@
+name: Update Specs
+
+on:
+  schedule:
+    - cron: "0 0 * * *" # every 24 hours at midnight UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fetch-and-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        working-directory: .meta
+        run: bun install --frozen-lockfile
+
+      - name: Fetch specs
+        working-directory: .meta
+        run: bun run fetch-specs
+
+      - name: Commit and push if changed
+        run: |
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git commit -m "feat: update specs $(date -u +%Y-%m-%d)"
+            git push
+          fi
