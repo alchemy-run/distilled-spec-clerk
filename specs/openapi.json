@@ -4098,6 +4098,11 @@
             "type": "integer",
             "nullable": true
           },
+          "channel": {
+            "type": "string",
+            "nullable": true,
+            "description": "The delivery channel of the code (phone codes only)."
+          },
           "verified_at_client": {
             "type": "string",
             "nullable": true
