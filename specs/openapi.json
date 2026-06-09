@@ -4115,15 +4115,9 @@
             "enum": [
               "pending",
               "completed",
-              "expired",
               "canceled"
             ],
             "description": "The current status of the domain intent."
-          },
-          "expires_at": {
-            "type": "integer",
-            "format": "int64",
-            "description": "Unix timestamp in milliseconds when the intent expires."
           },
           "domain_id": {
             "type": "string",
@@ -4145,7 +4139,6 @@
           "object",
           "id",
           "status",
-          "expires_at",
           "records"
         ]
       },
