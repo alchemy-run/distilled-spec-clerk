@@ -4351,7 +4351,7 @@
         "x-speakeasy-group": "users",
         "x-speakeasy-name-override": "unsetPasswordCompromised",
         "summary": "Unset a user's password as compromised",
-        "description": "Sets the given user's password as no longer compromised. The user will no longer be prompted to reset their password on their next sign-in.",
+        "description": "Sets the given user's password as no longer compromised. The user will no longer be prompted to reset their password on their next sign-in.\n\nIf the user is in reserved-email password quarantine, the quarantine is preserved and the returned user will still have `requires_password_reset` set to `true`. Reserved-email password quarantine can only be cleared by completing a password reset or changing/removing the password.",
         "tags": [
           "Users"
         ],
@@ -8595,7 +8595,7 @@
                   },
                   "enrollment_mode": {
                     "type": "string",
-                    "description": "The enrollment_mode for the new domain. This can be `automatic_invitation`, `automatic_suggestion` or `manual_invitation`",
+                    "description": "The enrollment_mode for the new domain. This can be `automatic_invitation`, `automatic_suggestion`, `manual_invitation` or `enterprise_sso`",
                     "nullable": false
                   },
                   "verified": {
@@ -8658,7 +8658,7 @@
             "in": "query",
             "required": false,
             "name": "enrollment_mode",
-            "description": "Filter domains by their enrollment mode",
+            "description": "Filter domains by their enrollment mode. Accepts `automatic_invitation`, `automatic_suggestion`, `manual_invitation` or `enterprise_sso`.\nPrefix a value with `-` to exclude it instead (e.g. `-enterprise_sso`). Include and exclude filters can be combined and compose as AND.",
             "schema": {
               "type": "string"
             }
@@ -8722,7 +8722,7 @@
                 "properties": {
                   "enrollment_mode": {
                     "type": "string",
-                    "description": "The enrollment_mode for the new domain. This can be `automatic_invitation`, `automatic_suggestion` or `manual_invitation`",
+                    "description": "The enrollment_mode for the new domain. This can be `automatic_invitation`, `automatic_suggestion`, `manual_invitation` or `enterprise_sso`",
                     "nullable": true
                   },
                   "verified": {
@@ -8740,6 +8740,9 @@
             "$ref": "#/components/responses/OrganizationDomain"
           },
           "400": {
+            "$ref": "#/components/responses/ClerkErrors"
+          },
+          "403": {
             "$ref": "#/components/responses/ClerkErrors"
           },
           "404": {
@@ -8788,6 +8791,9 @@
           },
           "401": {
             "$ref": "#/components/responses/AuthenticationInvalid"
+          },
+          "403": {
+            "$ref": "#/components/responses/ClerkErrors"
           },
           "404": {
             "$ref": "#/components/responses/ResourceNotFound"
@@ -8877,7 +8883,7 @@
           {
             "in": "query",
             "name": "enrollment_mode",
-            "description": "Filter by enrollment mode",
+            "description": "Filter by enrollment mode. Prefix a value with `-` to exclude it instead\n(e.g. `-enterprise_sso`). Include and exclude filters can be combined and compose as AND.",
             "required": false,
             "style": "form",
             "explode": false,
@@ -8888,7 +8894,12 @@
                 "enum": [
                   "manual_invitation",
                   "automatic_invitation",
-                  "automatic_suggestion"
+                  "automatic_suggestion",
+                  "enterprise_sso",
+                  "-manual_invitation",
+                  "-automatic_invitation",
+                  "-automatic_suggestion",
+                  "-enterprise_sso"
                 ]
               }
             }
@@ -16753,7 +16764,8 @@
             "type": "string"
           },
           "meta": {
-            "type": "object"
+            "type": "object",
+            "additionalProperties": true
           }
         },
         "required": [
@@ -16772,7 +16784,8 @@
             }
           },
           "meta": {
-            "type": "object"
+            "type": "object",
+            "additionalProperties": true
           },
           "clerk_trace_id": {
             "type": "string"
@@ -21376,7 +21389,8 @@
             "enum": [
               "manual_invitation",
               "automatic_invitation",
-              "automatic_suggestion"
+              "automatic_suggestion",
+              "enterprise_sso"
             ]
           },
           "affiliation_email_address": {
