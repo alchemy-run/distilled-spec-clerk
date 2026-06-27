@@ -11642,7 +11642,7 @@
         },
         "responses": {
           "200": {
-            "$ref": "#/components/responses/responses-CommerceSubscriptionItem"
+            "$ref": "#/components/responses/CommerceSubscriptionItem-2"
           },
           "400": {
             "$ref": "#/components/responses/ClerkErrors"
@@ -19486,7 +19486,7 @@
           }
         }
       },
-      "schemas-CommercePerUnitTotalTier": {
+      "CommercePerUnitTotalTier-2": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
@@ -19523,7 +19523,7 @@
           "tiers": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/schemas-CommercePerUnitTotalTier"
+              "$ref": "#/components/schemas/CommercePerUnitTotalTier-2"
             },
             "description": "Per-unit cost breakdown by pricing tier"
           }
@@ -19532,7 +19532,7 @@
           "quantity"
         ]
       },
-      "schemas-CommercePerUnitTotal": {
+      "CommercePerUnitTotal-2": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
@@ -19548,7 +19548,7 @@
           "tiers": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/schemas-CommercePerUnitTotalTier"
+              "$ref": "#/components/schemas/CommercePerUnitTotalTier-2"
             },
             "description": "Computed totals for each pricing tier"
           }
@@ -19614,7 +19614,7 @@
           "total"
         ]
       },
-      "schemas-CommerceTotalsResponse": {
+      "CommerceTotalsResponse-2": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
@@ -19633,7 +19633,7 @@
           "per_unit_totals": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/schemas-CommercePerUnitTotal"
+              "$ref": "#/components/schemas/CommercePerUnitTotal-2"
             }
           },
           "credits": {
@@ -19834,7 +19834,7 @@
           "totals": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/schemas-CommerceTotalsResponse"
+                "$ref": "#/components/schemas/CommerceTotalsResponse-2"
               }
             ],
             "nullable": true,
@@ -19862,14 +19862,14 @@
           "per_unit_totals": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/schemas-CommercePerUnitTotal"
+              "$ref": "#/components/schemas/CommercePerUnitTotal-2"
             },
             "description": "Per-unit total breakdown (for example, seats) for the next payment."
           },
           "totals": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/schemas-CommerceTotalsResponse"
+                "$ref": "#/components/schemas/CommerceTotalsResponse-2"
               }
             ],
             "nullable": true,
@@ -22895,7 +22895,7 @@
           }
         }
       },
-      "schemas-FeatureResponse": {
+      "FeatureResponse-2": {
         "type": "object",
         "additionalProperties": false,
         "required": [
@@ -22936,7 +22936,7 @@
           }
         }
       },
-      "schemas-CommercePlan": {
+      "CommercePlan-2": {
         "type": "object",
         "additionalProperties": false,
         "required": [
@@ -23096,7 +23096,7 @@
           "features": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/schemas-FeatureResponse"
+              "$ref": "#/components/schemas/FeatureResponse-2"
             },
             "description": "The features included in this plan."
           },
@@ -23217,7 +23217,7 @@
           }
         }
       },
-      "schemas-CommercePayerResponse": {
+      "CommercePayerResponse-2": {
         "type": "object",
         "additionalProperties": false,
         "required": [
@@ -23291,7 +23291,7 @@
           }
         }
       },
-      "schemas-CommerceSubscriptionItem": {
+      "CommerceSubscriptionItem-2": {
         "type": "object",
         "additionalProperties": false,
         "required": [
@@ -23357,7 +23357,7 @@
           "plan": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/schemas-CommercePlan"
+                "$ref": "#/components/schemas/CommercePlan-2"
               }
             ],
             "nullable": true,
@@ -23427,7 +23427,7 @@
           "payer": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/schemas-CommercePayerResponse"
+                "$ref": "#/components/schemas/CommercePayerResponse-2"
               }
             ],
             "nullable": true,
@@ -23515,7 +23515,7 @@
         ],
         "properties": {
           "previous_plan": {
-            "$ref": "#/components/schemas/schemas-CommercePlan"
+            "$ref": "#/components/schemas/CommercePlan-2"
           },
           "previous_price": {
             "$ref": "#/components/schemas/BillingPriceResponse"
@@ -23584,7 +23584,7 @@
             ]
           },
           "subscription_item": {
-            "$ref": "#/components/schemas/schemas-CommerceSubscriptionItem"
+            "$ref": "#/components/schemas/CommerceSubscriptionItem-2"
           },
           "transition": {
             "$ref": "#/components/schemas/CommercePriceTransitionDetails"
@@ -23671,7 +23671,7 @@
           "totals": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/schemas-CommerceTotalsResponse"
+                "$ref": "#/components/schemas/CommerceTotalsResponse-2"
               }
             ],
             "nullable": true,
@@ -25309,12 +25309,12 @@
           }
         }
       },
-      "responses-CommerceSubscriptionItem": {
+      "CommerceSubscriptionItem-2": {
         "description": "A commerce subscription item.",
         "content": {
           "application/json": {
             "schema": {
-              "$ref": "#/components/schemas/schemas-CommerceSubscriptionItem"
+              "$ref": "#/components/schemas/CommerceSubscriptionItem-2"
             }
           }
         }
