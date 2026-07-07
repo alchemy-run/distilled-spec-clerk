@@ -22183,6 +22183,7 @@
           "allow_organization_account_linking",
           "authenticatable",
           "force_authn",
+          "disable_jit_provisioning",
           "created_at",
           "updated_at"
         ],
@@ -22229,6 +22230,7 @@
           "active",
           "domains",
           "authenticatable",
+          "disable_jit_provisioning",
           "created_at",
           "updated_at"
         ],
