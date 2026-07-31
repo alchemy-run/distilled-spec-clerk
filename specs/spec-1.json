@@ -522,6 +522,12 @@
                     "type": "boolean",
                     "description": "Create this email address as the primary email address for the user.\nDefault: false, unless it is the first email address.",
                     "nullable": true
+                  },
+                  "notify_primary_email_address_changed": {
+                    "type": "boolean",
+                    "description": "If set to `true` and the email address is created as the user's new primary,\nthe previous primary email address is notified of the change.\nBy default, no notification is sent.",
+                    "nullable": true,
+                    "default": false
                   }
                 },
                 "required": [
@@ -673,6 +679,12 @@
                     "type": "boolean",
                     "description": "Set this email address as the primary email address for the user.",
                     "nullable": true
+                  },
+                  "notify_primary_email_address_changed": {
+                    "type": "boolean",
+                    "description": "If set to `true` and this update makes the email address the user's new primary,\nthe previous primary email address is notified of the change.\nBy default, no notification is sent.",
+                    "nullable": true,
+                    "default": false
                   }
                 }
               }
@@ -853,6 +865,12 @@
                     ],
                     "default": "verified",
                     "description": "Controls the status of the replacement email address. Defaults to `verified`. Set to\n`reserved` to create it reserved (unverified but usable for sign-in and locked)\ninstead of verified."
+                  },
+                  "notify_primary_email_address_changed": {
+                    "type": "boolean",
+                    "description": "If set to `true`, the user's previous primary email address is notified that the\nprimary email address has changed. No notification is sent when the replacement\nis the user's current primary email address. By default, no notification is sent.",
+                    "nullable": true,
+                    "default": false
                   }
                 },
                 "required": [
@@ -1911,6 +1929,12 @@
           },
           "422": {
             "$ref": "#/components/responses/UnprocessableEntity"
+          },
+          "423": {
+            "$ref": "#/components/responses/Locked"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
         }
       }
@@ -2119,6 +2143,12 @@
           },
           "404": {
             "$ref": "#/components/responses/ResourceNotFound"
+          },
+          "423": {
+            "$ref": "#/components/responses/Locked"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
         }
       }
@@ -5607,10 +5637,33 @@
                     "nullable": true,
                     "description": "Whether dynamic OAuth client registration is enabled for the instance (RFC 7591)."
                   },
+                  "default_scopes": {
+                    "type": "array",
+                    "nullable": true,
+                    "description": "Default scopes. Set to null to reset to Clerk-provided defaults.",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
                   "oauth_jwt_access_tokens": {
                     "type": "boolean",
                     "nullable": true,
                     "description": "Whether OAuth JWT access tokens are enabled for the instance (disabled indicates opaque access tokens)."
+                  },
+                  "client_id_metadata_documents_advertised": {
+                    "type": "boolean",
+                    "nullable": true,
+                    "description": "Whether the instance advertises support for Client ID Metadata Documents in its OAuth authorization server metadata."
+                  },
+                  "client_id_metadata_documents_only_allow_pre_registered_clients": {
+                    "type": "boolean",
+                    "nullable": true,
+                    "description": "When true, new unknown CIMD clients are rejected. Previously auto-connected and pre-registered clients remain admitted; deleting a client makes it unknown again."
+                  },
+                  "client_id_metadata_documents_block_implicitly_allowed_clients": {
+                    "type": "boolean",
+                    "nullable": true,
+                    "description": "When true, recorded implicitly allowed CIMD clients are rejected on future client lookups. Explicitly allowed clients remain accepted. This does not revoke previously issued access tokens."
                   }
                 }
               }
@@ -9149,6 +9202,11 @@
                     "type": "string",
                     "description": "The ID of the user that can use the newly created sign in token"
                   },
+                  "org_id": {
+                    "type": "string",
+                    "description": "The ID of the organization to activate when the user signs in.\nOrganizations must be enabled for the instance, and the user must be a member of the organization.",
+                    "nullable": true
+                  },
                   "expires_in_seconds": {
                     "type": "integer",
                     "description": "Optional parameter to specify the life duration of the sign in token in seconds.\nBy default, the duration is 30 days.",
@@ -9167,6 +9225,9 @@
         "responses": {
           "200": {
             "$ref": "#/components/responses/SignInToken"
+          },
+          "403": {
+            "$ref": "#/components/responses/AuthorizationInvalid"
           },
           "404": {
             "$ref": "#/components/responses/ResourceNotFound"
@@ -9902,6 +9963,30 @@
                   "force_authn": {
                     "type": "boolean",
                     "description": "Enable or deactivate ForceAuthn"
+                  },
+                  "login_hint": {
+                    "type": "object",
+                    "description": "Configuration for the login_hint sent to the IdP on SSO sign-in",
+                    "nullable": true,
+                    "additionalProperties": false,
+                    "properties": {
+                      "mode": {
+                        "type": "string",
+                        "enum": [
+                          "email_address",
+                          "custom_attribute",
+                          "off"
+                        ],
+                        "description": "Controls the login_hint sent to the IdP on SSO sign-in"
+                      },
+                      "source": {
+                        "type": "string",
+                        "description": "The user public_metadata key whose value is sent as the login_hint when mode is custom_attribute"
+                      }
+                    },
+                    "required": [
+                      "mode"
+                    ]
                   }
                 },
                 "required": [
@@ -10114,6 +10199,30 @@
                   "force_authn": {
                     "type": "boolean",
                     "description": "Enable or deactivate ForceAuthn"
+                  },
+                  "login_hint": {
+                    "type": "object",
+                    "description": "Configuration for the login_hint sent to the IdP on SSO sign-in",
+                    "nullable": true,
+                    "additionalProperties": false,
+                    "properties": {
+                      "mode": {
+                        "type": "string",
+                        "enum": [
+                          "email_address",
+                          "custom_attribute",
+                          "off"
+                        ],
+                        "description": "Controls the login_hint sent to the IdP on SSO sign-in"
+                      },
+                      "source": {
+                        "type": "string",
+                        "description": "The user public_metadata key whose value is sent as the login_hint when mode is custom_attribute"
+                      }
+                    },
+                    "required": [
+                      "mode"
+                    ]
                   },
                   "consent_verified_domains_deletion": {
                     "type": "boolean",
@@ -10361,6 +10470,30 @@
                       "force_authn": {
                         "type": "boolean",
                         "nullable": true
+                      },
+                      "login_hint": {
+                        "type": "object",
+                        "description": "Configuration for the login_hint sent to the IdP on SSO sign-in",
+                        "nullable": true,
+                        "additionalProperties": false,
+                        "properties": {
+                          "mode": {
+                            "type": "string",
+                            "enum": [
+                              "email_address",
+                              "custom_attribute",
+                              "off"
+                            ],
+                            "description": "Controls the login_hint sent to the IdP on SSO sign-in"
+                          },
+                          "source": {
+                            "type": "string",
+                            "description": "The user public_metadata key whose value is sent as the login_hint when mode is custom_attribute"
+                          }
+                        },
+                        "required": [
+                          "mode"
+                        ]
                       }
                     }
                   },
@@ -10644,6 +10777,30 @@
                       "force_authn": {
                         "type": "boolean",
                         "nullable": true
+                      },
+                      "login_hint": {
+                        "type": "object",
+                        "description": "Configuration for the login_hint sent to the IdP on SSO sign-in",
+                        "nullable": true,
+                        "additionalProperties": false,
+                        "properties": {
+                          "mode": {
+                            "type": "string",
+                            "enum": [
+                              "email_address",
+                              "custom_attribute",
+                              "off"
+                            ],
+                            "description": "Controls the login_hint sent to the IdP on SSO sign-in"
+                          },
+                          "source": {
+                            "type": "string",
+                            "description": "The user public_metadata key whose value is sent as the login_hint when mode is custom_attribute"
+                          }
+                        },
+                        "required": [
+                          "mode"
+                        ]
                       }
                     }
                   },
@@ -15381,23 +15538,23 @@
                       "type": "number",
                       "nullable": true,
                       "description": "The timestamp for when the token will expire, in milliseconds",
-                      "example": 1716883200
+                      "example": 1716883200000
                     },
                     "last_used_at": {
                       "type": "number",
                       "nullable": true,
                       "description": "The timestamp for when the token was last used, in milliseconds",
-                      "example": 1716883200
+                      "example": 1716883200000
                     },
                     "created_at": {
                       "type": "number",
                       "description": "The timestamp for when the token was created, in milliseconds",
-                      "example": 1716883200
+                      "example": 1716883200000
                     },
                     "updated_at": {
                       "type": "number",
                       "description": "The timestamp for when the token was last updated, in milliseconds",
-                      "example": 1716883200
+                      "example": 1716883200000
                     }
                   },
                   "required": [
@@ -15626,23 +15783,23 @@
                             "type": "number",
                             "nullable": true,
                             "description": "The timestamp for when the token will expire, in milliseconds",
-                            "example": 1716883200
+                            "example": 1716883200000
                           },
                           "last_used_at": {
                             "type": "number",
                             "nullable": true,
                             "description": "The timestamp for when the token was last used, in milliseconds",
-                            "example": 1716883200
+                            "example": 1716883200000
                           },
                           "created_at": {
                             "type": "number",
                             "description": "The timestamp for when the token was created, in milliseconds",
-                            "example": 1716883200
+                            "example": 1716883200000
                           },
                           "updated_at": {
                             "type": "number",
                             "description": "The timestamp for when the token was last updated, in milliseconds",
-                            "example": 1716883200
+                            "example": 1716883200000
                           }
                         },
                         "required": [
@@ -15893,23 +16050,23 @@
                       "type": "number",
                       "nullable": true,
                       "description": "The timestamp for when the token will expire, in milliseconds",
-                      "example": 1716883200
+                      "example": 1716883200000
                     },
                     "last_used_at": {
                       "type": "number",
                       "nullable": true,
                       "description": "The timestamp for when the token was last used, in milliseconds",
-                      "example": 1716883200
+                      "example": 1716883200000
                     },
                     "created_at": {
                       "type": "number",
                       "description": "The timestamp for when the token was created, in milliseconds",
-                      "example": 1716883200
+                      "example": 1716883200000
                     },
                     "updated_at": {
                       "type": "number",
                       "description": "The timestamp for when the token was last updated, in milliseconds",
-                      "example": 1716883200
+                      "example": 1716883200000
                     }
                   },
                   "required": [
@@ -16100,23 +16257,23 @@
                       "type": "number",
                       "nullable": true,
                       "description": "The timestamp for when the token will expire, in milliseconds",
-                      "example": 1716883200
+                      "example": 1716883200000
                     },
                     "last_used_at": {
                       "type": "number",
                       "nullable": true,
                       "description": "The timestamp for when the token was last used, in milliseconds",
-                      "example": 1716883200
+                      "example": 1716883200000
                     },
                     "created_at": {
                       "type": "number",
                       "description": "The timestamp for when the token was created, in milliseconds",
-                      "example": 1716883200
+                      "example": 1716883200000
                     },
                     "updated_at": {
                       "type": "number",
                       "description": "The timestamp for when the token was last updated, in milliseconds",
-                      "example": 1716883200
+                      "example": 1716883200000
                     }
                   },
                   "required": [
@@ -18707,6 +18864,9 @@
           },
           "banned": {
             "type": "boolean"
+          },
+          "deprovisioned": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -19483,7 +19643,8 @@
             "description": "The payment method type.",
             "enum": [
               "card",
-              "link"
+              "link",
+              "payer-credits"
             ]
           },
           "is_default": {
@@ -21062,12 +21223,17 @@
           },
           "specter_enabled": {
             "type": "boolean"
+          },
+          "checks_bypassed": {
+            "type": "boolean",
+            "description": "Whether the instance has opted out of the Protect prerequisite checks, asserting its setup already meets the requirements."
           }
         },
         "required": [
           "object",
           "rules_enabled",
-          "specter_enabled"
+          "specter_enabled",
+          "checks_bypassed"
         ]
       },
       "InstanceCommunication": {
@@ -21107,15 +21273,40 @@
             "type": "boolean",
             "description": "Whether dynamic OAuth client registration is enabled for the instance (RFC 7591)."
           },
+          "default_scopes": {
+            "type": "array",
+            "nullable": true,
+            "description": "Default scopes.",
+            "uniqueItems": true,
+            "items": {
+              "type": "string"
+            }
+          },
           "oauth_jwt_access_tokens": {
             "type": "boolean",
             "description": "Whether OAuth JWT access tokens are enabled for the instance (disabled indicates opaque access tokens)."
+          },
+          "client_id_metadata_documents_advertised": {
+            "type": "boolean",
+            "description": "Whether the instance advertises support for Client ID Metadata Documents in its OAuth authorization server metadata."
+          },
+          "client_id_metadata_documents_only_allow_pre_registered_clients": {
+            "type": "boolean",
+            "description": "When true, new unknown CIMD clients are rejected. Previously auto-connected and pre-registered clients remain admitted; deleting a client makes it unknown again."
+          },
+          "client_id_metadata_documents_block_implicitly_allowed_clients": {
+            "type": "boolean",
+            "description": "When true, recorded implicitly allowed CIMD clients are rejected on future client lookups. Explicitly allowed clients remain accepted. This does not revoke previously issued access tokens."
           }
         },
         "required": [
           "object",
           "dynamic_oauth_client_registration",
-          "oauth_jwt_access_tokens"
+          "default_scopes",
+          "oauth_jwt_access_tokens",
+          "client_id_metadata_documents_advertised",
+          "client_id_metadata_documents_only_allow_pre_registered_clients",
+          "client_id_metadata_documents_block_implicitly_allowed_clients"
         ]
       },
       "OrganizationSettings": {
@@ -22307,6 +22498,29 @@
           "last_name"
         ]
       },
+      "SAMLConnectionLoginHint": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Configuration for the login_hint sent to the IdP on SSO sign-in",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "email_address",
+              "custom_attribute",
+              "off"
+            ],
+            "description": "Controls the login_hint sent to the IdP on SSO sign-in"
+          },
+          "source": {
+            "type": "string",
+            "description": "The user public_metadata key whose value is sent as the login_hint when mode is custom_attribute"
+          }
+        },
+        "required": [
+          "mode"
+        ]
+      },
       "SAMLConnection": {
         "type": "object",
         "properties": {
@@ -22408,6 +22622,9 @@
             "type": "boolean",
             "description": "Enable or deactivate ForceAuthn"
           },
+          "login_hint": {
+            "$ref": "#/components/schemas/SAMLConnectionLoginHint"
+          },
           "enterprise_connection_id": {
             "type": "string",
             "nullable": true
@@ -22445,6 +22662,7 @@
           "allow_organization_account_linking",
           "authenticatable",
           "force_authn",
+          "login_hint",
           "disable_jit_provisioning",
           "created_at",
           "updated_at"
@@ -22486,6 +22704,7 @@
       "EnterpriseConnection": {
         "type": "object",
         "required": [
+          "object",
           "id",
           "name",
           "provider",
@@ -22497,6 +22716,12 @@
           "updated_at"
         ],
         "properties": {
+          "object": {
+            "type": "string",
+            "enum": [
+              "enterprise_connection"
+            ]
+          },
           "id": {
             "type": "string",
             "description": "The enterprise connection ID"
@@ -22632,6 +22857,28 @@
               "force_authn": {
                 "type": "boolean",
                 "description": "Whether to force re-authentication"
+              },
+              "login_hint": {
+                "type": "object",
+                "description": "Configuration for the login_hint sent to the IdP on SSO sign-in",
+                "properties": {
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "email_address",
+                      "custom_attribute",
+                      "off"
+                    ],
+                    "description": "Controls the login_hint sent to the IdP on SSO sign-in"
+                  },
+                  "source": {
+                    "type": "string",
+                    "description": "The user public_metadata key whose value is sent as the login_hint when mode is custom_attribute"
+                  }
+                },
+                "required": [
+                  "mode"
+                ]
               }
             }
           },
@@ -24865,6 +25112,26 @@
           }
         }
       },
+      "Locked": {
+        "description": "Locked",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ClerkErrors"
+            }
+          }
+        }
+      },
+      "TooManyRequests": {
+        "description": "Too many requests",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ClerkErrors"
+            }
+          }
+        }
+      },
       "User.List": {
         "description": "Success",
         "content": {
@@ -25084,6 +25351,8 @@
                   "type": "boolean"
                 },
                 "enhanced_email_deliverability": {
+                  "deprecated": true,
+                  "description": "Deprecated. When enabled, production authentication emails for this instance are sent through Clerk's legacy managed email delivery path. This setting is being retired; use the instance's configured email sending domain instead.\n",
                   "type": "boolean"
                 }
               }
