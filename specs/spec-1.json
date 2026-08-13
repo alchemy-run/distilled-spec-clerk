@@ -2161,7 +2161,7 @@
         "x-speakeasy-group": "users",
         "x-speakeasy-name-override": "list",
         "summary": "List all users",
-        "description": "Returns a list of all users.\nThe users are returned sorted by creation date, with the newest users appearing first.",
+        "description": "Returns a list of all users.\nThe users are returned sorted by creation date, with the newest users appearing first.\n\nTo walk more than a few pages, paginate with `starting_after` rather than `offset`.\nA cursor page costs the same no matter how far into the list it sits, while a large `offset`\nhas to walk and discard every row before it, so it gets progressively slower and eventually\ntimes out. Cursor pagination requires the `created_at` ordering, which is the default.",
         "tags": [
           "Users"
         ],
@@ -2394,9 +2394,18 @@
             "$ref": "#/components/parameters/OffsetParameter"
           },
           {
+            "name": "starting_after",
+            "in": "query",
+            "description": "A cursor for pagination: the `id` of the last user on the previous page. Returns the users that follow it.\n\n**Requires ordering by `created_at`** — that is, `order_by` omitted, or set to `created_at`, `+created_at`\nor `-created_at`. Any other `order_by` value is rejected with a 422: the other orderings sort by a value\nthat is neither unique per user nor immutable, so a cursor over them would skip or repeat users.\n\nCannot be combined with a non-zero `offset`, which is also a 422. Keep every other parameter identical\nacross requests, and stop when a page returns fewer than `limit` users.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "order_by",
             "in": "query",
-            "description": "Allows to return users in a particular order.\nAt the moment, you can order the returned users by their `created_at`,`updated_at`,`email_address`,`web3wallet`,`first_name`,`last_name`,`phone_number`,`username`,`last_active_at`,`last_sign_in_at`.\nIn order to specify the direction, you can use the `+/-` symbols prepended in the property to order by.\nFor example, if you want users to be returned in descending order according to their `created_at` property, you can use `-created_at`.\nIf you don't use `+` or `-`, then `+` is implied. We only support one `order_by` parameter, and if multiple `order_by` parameters are provided, we will only keep the first one. For example,\nif you pass `order_by=username&order_by=created_at`, we will consider only the first `order_by` parameter, which is `username`. The `created_at` parameter will be ignored in this case.",
+            "description": "Allows to return users in a particular order.\nAt the moment, you can order the returned users by their `created_at`,`updated_at`,`email_address`,`web3wallet`,`first_name`,`last_name`,`phone_number`,`username`,`last_active_at`,`last_sign_in_at`.\nIn order to specify the direction, you can use the `+/-` symbols prepended in the property to order by.\nFor example, if you want users to be returned in descending order according to their `created_at` property, you can use `-created_at`.\nIf you don't use `+` or `-`, then `+` is implied. We only support one `order_by` parameter, and if multiple `order_by` parameters are provided, we will only keep the first one. For example,\nif you pass `order_by=username&order_by=created_at`, we will consider only the first `order_by` parameter, which is `username`. The `created_at` parameter will be ignored in this case.\nOnly the `created_at` orderings can be combined with `starting_after` cursor pagination; see that parameter.",
             "schema": {
               "type": "string",
               "default": "-created_at"
@@ -2591,7 +2600,7 @@
                   },
                   "bypass_client_trust": {
                     "type": "boolean",
-                    "description": "When set to `true`, the user will bypass client trust checks during sign-in.",
+                    "description": "When set to `true`, the user will bypass Device Trust checks during sign-in.",
                     "nullable": true
                   },
                   "banned": {
@@ -3076,7 +3085,7 @@
                   },
                   "bypass_client_trust": {
                     "type": "boolean",
-                    "description": "When set to `true`, the user will bypass client trust checks during sign-in.",
+                    "description": "When set to `true`, the user will bypass Device Trust checks during sign-in.",
                     "nullable": true
                   }
                 }
@@ -9529,7 +9538,7 @@
           {
             "name": "name_query",
             "in": "query",
-            "description": "Returns OAuth applications with names that match the given query, via case-insensitive partial match.",
+            "description": "Returns OAuth applications with names that match the given query, via case-insensitive partial match.\nAlso returns the OAuth application whose `client_id` is exactly the given query, which is useful for\nresolving a `client_id` to the OAuth application `id` required by the read, update and delete endpoints.",
             "required": false,
             "schema": {
               "type": "string"
@@ -10716,6 +10725,10 @@
                           "type": "string",
                           "description": "GJSON path to extract the attribute value from SCIM user resources"
                         },
+                        "directory_path": {
+                          "type": "string",
+                          "description": "The new name for `scim_path`. Send either one, or both with the same value; sending both with different values is rejected."
+                        },
                         "multi_valued": {
                           "type": "boolean",
                           "description": "When true, the attribute supports multiple values; values from the IdP are written to public_metadata as an array. Defaults to false."
@@ -11023,6 +11036,10 @@
                         "scim_path": {
                           "type": "string",
                           "description": "GJSON path to extract the attribute value from SCIM user resources"
+                        },
+                        "directory_path": {
+                          "type": "string",
+                          "description": "The new name for `scim_path`. Send either one, or both with the same value; sending both with different values is rejected."
                         },
                         "multi_valued": {
                           "type": "boolean",
@@ -12951,8 +12968,8 @@
         "tags": [
           "SCIM Directories"
         ],
-        "summary": "List all SCIM directories",
-        "description": "Returns a list of all SCIM directories for the instance.",
+        "summary": "List all directories",
+        "description": "Returns a list of all directories for the instance.",
         "parameters": [
           {
             "$ref": "#/components/parameters/LimitParameter"
@@ -12980,8 +12997,8 @@
         "tags": [
           "SCIM Directories"
         ],
-        "summary": "Create a SCIM directory",
-        "description": "Create a new SCIM directory for the instance.",
+        "summary": "Create a directory",
+        "description": "Create a new directory for the instance.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -12990,15 +13007,15 @@
                 "properties": {
                   "enterprise_connection_id": {
                     "type": "string",
-                    "description": "The ID of the enterprise connection to associate with this SCIM directory."
+                    "description": "The ID of the enterprise connection to associate with this directory."
                   },
                   "name": {
                     "type": "string",
-                    "description": "A human-friendly name for the SCIM directory."
+                    "description": "A human-friendly name for the directory."
                   },
                   "provider": {
                     "type": "string",
-                    "description": "The identity provider for this SCIM directory."
+                    "description": "The identity provider for this directory."
                   },
                   "group_role_mappings": {
                     "type": "array",
@@ -13067,13 +13084,13 @@
         "tags": [
           "SCIM Directories"
         ],
-        "summary": "Retrieve a SCIM directory",
-        "description": "Returns the details of a SCIM directory.",
+        "summary": "Retrieve a directory",
+        "description": "Returns the details of a directory.",
         "parameters": [
           {
             "name": "scim_directory_id",
             "in": "path",
-            "description": "The ID of the SCIM directory to retrieve",
+            "description": "The ID of the directory to retrieve",
             "required": true,
             "schema": {
               "type": "string"
@@ -13102,13 +13119,13 @@
         "tags": [
           "SCIM Directories"
         ],
-        "summary": "Update a SCIM directory",
-        "description": "Updates a SCIM directory.",
+        "summary": "Update a directory",
+        "description": "Updates a directory.",
         "parameters": [
           {
             "name": "scim_directory_id",
             "in": "path",
-            "description": "The ID of the SCIM directory to update",
+            "description": "The ID of the directory to update",
             "required": true,
             "schema": {
               "type": "string"
@@ -13123,15 +13140,15 @@
                 "properties": {
                   "name": {
                     "type": "string",
-                    "description": "A human-friendly name for the SCIM directory."
+                    "description": "A human-friendly name for the directory."
                   },
                   "enabled": {
                     "type": "boolean",
-                    "description": "Whether the SCIM directory is enabled."
+                    "description": "Whether the directory is enabled."
                   },
                   "provider": {
                     "type": "string",
-                    "description": "The identity provider for this SCIM directory."
+                    "description": "The identity provider for this directory."
                   },
                   "attribute_mapping": {
                     "type": "object",
@@ -13143,7 +13160,7 @@
                   },
                   "group_role_mapping_enabled": {
                     "type": "boolean",
-                    "description": "Whether group-to-role mapping is enabled for this SCIM directory."
+                    "description": "Whether group-to-role mapping is enabled for this directory."
                   }
                 }
               }
@@ -13178,13 +13195,285 @@
         "tags": [
           "SCIM Directories"
         ],
-        "summary": "Delete a SCIM directory",
-        "description": "Deletes a SCIM directory and stops provisioning for it. SCIM requests authenticated\nwith the directory's API key are rejected afterwards.",
+        "summary": "Delete a directory",
+        "description": "Deletes a directory and stops provisioning for it. SCIM requests authenticated\nwith the directory's API key are rejected afterwards.",
         "parameters": [
           {
             "name": "scim_directory_id",
             "in": "path",
-            "description": "The ID of the SCIM directory to delete",
+            "description": "The ID of the directory to delete",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/DeletedObject"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationInvalid"
+          },
+          "403": {
+            "$ref": "#/components/responses/AuthorizationInvalid"
+          },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          }
+        }
+      }
+    },
+    "/directories": {
+      "get": {
+        "operationId": "ListDirectories",
+        "x-speakeasy-group": "directories",
+        "x-speakeasy-name-override": "list",
+        "tags": [
+          "Directories"
+        ],
+        "summary": "List all directories",
+        "description": "Returns a list of all directories for the instance.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LimitParameter"
+          },
+          {
+            "$ref": "#/components/parameters/OffsetParameter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Directory.List"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationInvalid"
+          },
+          "403": {
+            "$ref": "#/components/responses/AuthorizationInvalid"
+          }
+        }
+      },
+      "post": {
+        "operationId": "CreateDirectory",
+        "x-speakeasy-group": "directories",
+        "x-speakeasy-name-override": "create",
+        "tags": [
+          "Directories"
+        ],
+        "summary": "Create a directory",
+        "description": "Create a new directory for the instance.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "enterprise_connection_id": {
+                    "type": "string",
+                    "description": "The ID of the enterprise connection to associate with this directory."
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "A human-friendly name for the directory."
+                  },
+                  "provider": {
+                    "type": "string",
+                    "description": "The identity provider for this directory."
+                  },
+                  "group_role_mappings": {
+                    "type": "array",
+                    "description": "Optional directory group to organization role mappings to create with the directory.",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "directory_group_id": {
+                          "type": "string",
+                          "description": "The group ID from the identity provider. Exactly one of `directory_group_id` or `scim_group_id` is required."
+                        },
+                        "scim_group_id": {
+                          "type": "string",
+                          "description": "The legacy name for `directory_group_id`. Send either one, or both with the same value; sending both with different values is rejected."
+                        },
+                        "directory_group_display_name": {
+                          "type": "string",
+                          "maxLength": 255,
+                          "description": "Optional display name for the group."
+                        },
+                        "scim_group_display_name": {
+                          "type": "string",
+                          "maxLength": 255,
+                          "description": "The legacy name for `directory_group_display_name`. Send either one, or both with the same value; sending both with different values is rejected."
+                        },
+                        "role_id": {
+                          "type": "string",
+                          "description": "The organization role ID to assign to members of the group."
+                        },
+                        "precedence": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "description": "The precedence for this mapping. If omitted, precedence is assigned by array order."
+                        }
+                      },
+                      "required": [
+                        "role_id"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "enterprise_connection_id",
+                  "provider"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Directory"
+          },
+          "400": {
+            "$ref": "#/components/responses/ClerkErrors"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationInvalid"
+          },
+          "403": {
+            "$ref": "#/components/responses/AuthorizationInvalid"
+          },
+          "422": {
+            "$ref": "#/components/responses/UnprocessableEntity"
+          }
+        }
+      }
+    },
+    "/directories/{directory_id}": {
+      "get": {
+        "operationId": "GetDirectory",
+        "x-speakeasy-group": "directories",
+        "x-speakeasy-name-override": "get",
+        "tags": [
+          "Directories"
+        ],
+        "summary": "Retrieve a directory",
+        "description": "Returns the details of a directory.",
+        "parameters": [
+          {
+            "name": "directory_id",
+            "in": "path",
+            "description": "The ID of the directory to retrieve",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Directory"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationInvalid"
+          },
+          "403": {
+            "$ref": "#/components/responses/AuthorizationInvalid"
+          },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "UpdateDirectory",
+        "x-speakeasy-group": "directories",
+        "x-speakeasy-name-override": "update",
+        "tags": [
+          "Directories"
+        ],
+        "summary": "Update a directory",
+        "description": "Updates a directory.",
+        "parameters": [
+          {
+            "name": "directory_id",
+            "in": "path",
+            "description": "The ID of the directory to update",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "A human-friendly name for the directory."
+                  },
+                  "enabled": {
+                    "type": "boolean",
+                    "description": "Whether the directory is enabled."
+                  },
+                  "provider": {
+                    "type": "string",
+                    "description": "The identity provider for this directory."
+                  },
+                  "attribute_mapping": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "description": "Attribute-to-directory-path entries to merge into the directory's attribute mapping.\nSet a key to `null` to remove it from the mapping."
+                  },
+                  "group_role_mapping_enabled": {
+                    "type": "boolean",
+                    "description": "Whether group-to-role mapping is enabled for this directory."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Directory"
+          },
+          "400": {
+            "$ref": "#/components/responses/ClerkErrors"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationInvalid"
+          },
+          "403": {
+            "$ref": "#/components/responses/AuthorizationInvalid"
+          },
+          "404": {
+            "$ref": "#/components/responses/ResourceNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/UnprocessableEntity"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "DeleteDirectory",
+        "x-speakeasy-group": "directories",
+        "x-speakeasy-name-override": "delete",
+        "tags": [
+          "Directories"
+        ],
+        "summary": "Delete a directory",
+        "description": "Deletes a directory and stops provisioning for it. Provisioning requests authenticated\nwith the directory's API key are rejected afterwards.",
+        "parameters": [
+          {
+            "name": "directory_id",
+            "in": "path",
+            "description": "The ID of the directory to delete",
             "required": true,
             "schema": {
               "type": "string"
@@ -19097,20 +19386,20 @@
       "SCIMUserMetadata": {
         "type": "object",
         "additionalProperties": false,
-        "description": "Metadata describing a user's linkage to a SCIM directory. This object is only delivered on `user.created` and `user.updated` webhook events, and only when the user is provisioned through a SCIM directory. Its absence does not necessarily mean the user is not SCIM-managed.\n",
+        "description": "Metadata describing a user's linkage to a directory. This object is only delivered on `user.created` and `user.updated` webhook events, and only when the user is provisioned through a directory. Its absence does not necessarily mean the user is not managed by a directory.\n",
         "properties": {
           "directory_id": {
             "type": "string",
-            "description": "The ID of the SCIM directory the user is provisioned from.\n"
+            "description": "The ID of the directory the user is provisioned from.\n"
           },
           "directory_enabled": {
             "type": "boolean",
-            "description": "Whether the SCIM directory is currently enabled. Omitted when false.\n"
+            "description": "Whether the directory is currently enabled. Omitted when false.\n"
           },
           "external_id": {
             "type": "string",
             "nullable": true,
-            "description": "The user's external ID as reported by the SCIM directory, if any.\n"
+            "description": "The user's external ID as reported by the directory, if any.\n"
           }
         },
         "required": [
@@ -19334,7 +19623,7 @@
           },
           "bypass_client_trust": {
             "type": "boolean",
-            "description": "When set to `true`, the user will bypass client trust checks during sign-in.",
+            "description": "When set to `true`, the user will bypass Device Trust checks during sign-in.",
             "default": false
           },
           "scim": {
@@ -23013,6 +23302,10 @@
                   "type": "string",
                   "description": "GJSON path to extract the attribute value from SCIM user resources"
                 },
+                "directory_path": {
+                  "type": "string",
+                  "description": "GJSON path to extract the attribute value from directory sync user resources. Same value as `scim_path`."
+                },
                 "multi_valued": {
                   "type": "boolean",
                   "description": "When true, the attribute supports multiple values; values from the IdP are written to public_metadata as an array. Defaults to false."
@@ -24978,7 +25271,7 @@
       },
       "SCIMDirectory": {
         "type": "object",
-        "description": "A SCIM directory configuration for provisioning users via SCIM protocol.",
+        "description": "A directory configuration for provisioning users via SCIM protocol.",
         "properties": {
           "object": {
             "type": "string",
@@ -24989,11 +25282,11 @@
           },
           "id": {
             "type": "string",
-            "description": "Unique identifier for the SCIM directory."
+            "description": "Unique identifier for the directory."
           },
           "name": {
             "type": "string",
-            "description": "A human-friendly name for the SCIM directory."
+            "description": "A human-friendly name for the directory."
           },
           "enterprise_connection_id": {
             "type": "string",
@@ -25006,15 +25299,15 @@
           },
           "provider": {
             "type": "string",
-            "description": "The identity provider for this SCIM directory."
+            "description": "The identity provider for this directory."
           },
           "enabled": {
             "type": "boolean",
-            "description": "Whether the SCIM directory is enabled."
+            "description": "Whether the directory is enabled."
           },
           "group_role_mapping_enabled": {
             "type": "boolean",
-            "description": "Whether group-to-role mapping is enabled for this SCIM directory."
+            "description": "Whether group-to-role mapping is enabled for this directory."
           },
           "attribute_mapping": {
             "type": "object",
@@ -25045,6 +25338,10 @@
                   "type": "string",
                   "description": "GJSON path to extract the attribute value from SCIM user resources"
                 },
+                "directory_path": {
+                  "type": "string",
+                  "description": "GJSON path to extract the attribute value from directory sync user resources. Same value as `scim_path`."
+                },
                 "multi_valued": {
                   "type": "boolean",
                   "description": "When true, the attribute supports multiple values; values from the IdP are written to public_metadata as an array. Defaults to false."
@@ -25060,12 +25357,12 @@
           "created_at": {
             "type": "integer",
             "format": "int64",
-            "description": "Unix timestamp when the SCIM directory was created."
+            "description": "Unix timestamp when the directory was created."
           },
           "updated_at": {
             "type": "integer",
             "format": "int64",
-            "description": "Unix timestamp when the SCIM directory was last updated."
+            "description": "Unix timestamp when the directory was last updated."
           }
         },
         "required": [
@@ -25085,6 +25382,121 @@
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/SCIMDirectory"
+        }
+      },
+      "Directory": {
+        "type": "object",
+        "description": "A directory configuration for provisioning users from an identity provider.",
+        "properties": {
+          "object": {
+            "type": "string",
+            "description": "String representing the object's type. Always \"directory\".",
+            "enum": [
+              "directory"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the directory."
+          },
+          "name": {
+            "type": "string",
+            "description": "A human-friendly name for the directory."
+          },
+          "enterprise_connection_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The ID of the associated enterprise connection."
+          },
+          "endpoint_url": {
+            "type": "string",
+            "description": "The provisioning endpoint URL for this directory."
+          },
+          "provider": {
+            "type": "string",
+            "description": "The identity provider for this directory."
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether the directory is enabled."
+          },
+          "group_role_mapping_enabled": {
+            "type": "boolean",
+            "description": "Whether group-to-role mapping is enabled for this directory."
+          },
+          "attribute_mapping": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Mapping of user attributes to the directory attribute paths they are extracted from."
+          },
+          "custom_attributes": {
+            "type": "array",
+            "description": "Custom attributes to map from the IdP to the user's profile via directory sync. Requires the custom attributes feature to be enabled for the instance.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "Display name for the custom attribute"
+                },
+                "key": {
+                  "type": "string",
+                  "description": "Key used to store the attribute in the user's public/private/unsafe metadata"
+                },
+                "sso_path": {
+                  "type": "string",
+                  "description": "Path to extract the attribute value from SSO claims (SAML assertions or OIDC claims)"
+                },
+                "scim_path": {
+                  "type": "string",
+                  "description": "The legacy name for `directory_path`. Carries the same value."
+                },
+                "directory_path": {
+                  "type": "string",
+                  "description": "GJSON path to extract the attribute value from directory sync user resources"
+                },
+                "multi_valued": {
+                  "type": "boolean",
+                  "description": "When true, the attribute supports multiple values; values from the IdP are written to public_metadata as an array. Defaults to false."
+                }
+              }
+            }
+          },
+          "api_key": {
+            "type": "string",
+            "nullable": true,
+            "description": "The API key for authenticating provisioning requests. Only returned when the directory is created or the key is rotated."
+          },
+          "created_at": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Unix timestamp when the directory was created."
+          },
+          "updated_at": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Unix timestamp when the directory was last updated."
+          }
+        },
+        "required": [
+          "object",
+          "id",
+          "name",
+          "endpoint_url",
+          "provider",
+          "enabled",
+          "group_role_mapping_enabled",
+          "attribute_mapping",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "Directories": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Directory"
         }
       }
     },
@@ -26370,7 +26782,7 @@
         }
       },
       "SCIMDirectory.List": {
-        "description": "A list of SCIM directories",
+        "description": "A list of directories",
         "content": {
           "application/json": {
             "schema": {
@@ -26381,7 +26793,7 @@
                 },
                 "total_count": {
                   "type": "integer",
-                  "description": "Total number of SCIM directories."
+                  "description": "Total number of directories."
                 }
               },
               "required": [
@@ -26393,11 +26805,44 @@
         }
       },
       "SCIMDirectory": {
-        "description": "A SCIM directory",
+        "description": "A directory",
         "content": {
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/SCIMDirectory"
+            }
+          }
+        }
+      },
+      "Directory.List": {
+        "description": "A list of directories",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/Directories"
+                },
+                "total_count": {
+                  "type": "integer",
+                  "description": "Total number of directories."
+                }
+              },
+              "required": [
+                "data",
+                "total_count"
+              ]
+            }
+          }
+        }
+      },
+      "Directory": {
+        "description": "A directory",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Directory"
             }
           }
         }
