@@ -4007,6 +4007,43 @@
           "required"
         ]
       },
+      "PlatformDNSTarget": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "host": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "record_type": {
+            "type": "string",
+            "enum": [
+              "CNAME",
+              "TXT"
+            ]
+          },
+          "automation_disposition": {
+            "type": "string",
+            "description": "Provider-independent safety decision for automating this DNS record when available.",
+            "enum": [
+              "already_satisfied",
+              "safe_to_create",
+              "manual_resolution_required"
+            ]
+          },
+          "required": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "host",
+          "value",
+          "record_type",
+          "required"
+        ]
+      },
       "PlatformDomainApplicationSummary": {
         "type": "object",
         "additionalProperties": false,
@@ -4121,7 +4158,14 @@
             "items": {
               "$ref": "#/components/schemas/PlatformCNameTarget"
             },
-            "description": "CNAME targets for the domain. Omitted for development domains, which do not use custom-domain DNS setup.\n"
+            "description": "Legacy CNAME-only targets for the domain. New consumers should prefer `dns_targets` when present.\nOmitted for development domains, which do not use custom-domain DNS setup.\n"
+          },
+          "dns_targets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlatformDNSTarget"
+            },
+            "description": "The complete typed DNS contract for the domain. Consumers should use this field instead of merging it\nwith `cname_targets`. Omitted for development domains, which do not use custom-domain DNS setup.\n"
           },
           "created_at": {
             "type": "string",
@@ -4232,6 +4276,13 @@
           "to": {
             "type": "string"
           },
+          "record_type": {
+            "type": "string",
+            "enum": [
+              "CNAME",
+              "TXT"
+            ]
+          },
           "verified": {
             "type": "boolean"
           },
@@ -4250,6 +4301,7 @@
           "clerk_subdomain",
           "from",
           "to",
+          "record_type",
           "verified",
           "required",
           "failure_hints"
@@ -4283,6 +4335,9 @@
                 "$ref": "#/components/schemas/CNAMEStatus"
               },
               "clkmail": {
+                "$ref": "#/components/schemas/CNAMEStatus"
+              },
+              "_dmarc": {
                 "$ref": "#/components/schemas/CNAMEStatus"
               }
             }
@@ -4504,7 +4559,7 @@
             "type": "array",
             "description": "DNS records to configure before completion.",
             "items": {
-              "$ref": "#/components/schemas/PlatformCNameTarget"
+              "$ref": "#/components/schemas/PlatformDNSTarget"
             }
           }
         },
@@ -6180,6 +6235,11 @@
           },
           "admin_delete_enabled": {
             "type": "boolean"
+          },
+          "self_serve_sso_enabled": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Whether this organization can configure self-serve enterprise SSO.\n"
           },
           "public_metadata": {
             "type": "object",
